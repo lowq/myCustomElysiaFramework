@@ -1,0 +1,245 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../prisma/client"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
+}
+
+//-----------------------------------------------------------------------------------------------
+// Base framework models
+//-----------------------------------------------------------------------------------------------
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  message   String   @db.Text
+  type      String
+}
+
+model Job {
+  id           Int       @id @default(autoincrement())
+  name         String    @unique
+  lastExecuted DateTime? @default(dbgenerated()) @updatedAt()
+}
+
+model Migrations {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+//-----------------------------------------------------------------------------------------------
+// Migrations from User plugin 
+//-----------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------
+// Schema from user.prisma model and migration 2024_0821_create_user_table 
+//-----------------------------------------------------------------------------------------------
+
+model User {
+  id           Int          @id @default(autoincrement())
+  email        String       @unique
+  name         String
+  surname      String
+  password     String
+  activated    Boolean      @default(false)
+  verifyToken  String?      @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @default(now()) @updatedAt
+  // Relation
+  trips        UsersTrips[]
+  createdTrips Trip[]       @relation("TripCreator")
+  Profile      Profile?
+  Review       Review[]
+}
+
+//-----------------------------------------------------------------------------------------------
+// Migrations from Profile plugin 
+//-----------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------
+// Schema from profile.prisma model and migration 2024_0927_create_profile_table 
+//-----------------------------------------------------------------------------------------------
+
+model Profile {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @unique
+  firstName String
+  lastName  String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//-----------------------------------------------------------------------------------------------
+// Migrations from Trip plugin 
+//-----------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------
+// Schema from trip.prisma model and migration 2024_0821_create_trip_table 
+//-----------------------------------------------------------------------------------------------
+
+model Trip {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String
+  startDate   DateTime
+  endDate     DateTime?
+  type        TripType
+  public      Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  // Relation
+  users       UsersTrips[]
+  creator     User         @relation("TripCreator", fields: [creatorId], references: [id])
+  creatorId   Int
+  Review      Review[]
+  Itinenary   Itinenary[]
+  Place       Place[]
+  Timeline    Timeline?
+}
+
+model UsersTrips {
+  id         Int            @id @default(autoincrement())
+  accepted   Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  permission TripPermission
+  // Relation
+  user       User           @relation(fields: [userId], references: [id])
+  userId     Int
+  trip       Trip           @relation(fields: [tripId], references: [id])
+  tripId     Int
+}
+
+enum TripPermission {
+  EDITOR
+  VIEWER
+}
+
+enum TripType {
+  ADVENTURE // For activities like hiking climbing and exploring wilderness areas
+  ROAD_TRIP // Focused on driving from place to place with multiple destinations
+  BEACH_VACATION // Relaxing by the sea with water sports and resorts
+  CULTURAL // Exploring historical sites museums and local culture
+  BUSINESS // Work-related activities like meetings and conferences
+  FAMILY // Family-friendly activities and destinations
+  SOLO // Independent travel for self-discovery or relaxation
+  GROUP // Traveling with friends or an organized group
+  ROMANTIC // Romantic getaways for couples
+  ECO_TOURISM // Nature conservation and environmentally friendly activities
+  CITY_BREAK // Short trips to cities for sightseeing dining and shopping
+  CRUISE // Traveling by sea with stops at different ports
+  BACKPACKING // Low-cost flexible travel for adventurous or young travelers
+  LUXURY // High-end travel with luxury accommodations and experiences
+  FESTIVAL_EVENT // Traveling to attend festivals concerts or special events
+  WELLNESS_RETREAT // Focused on relaxation meditation and self-care
+}
+
+//-----------------------------------------------------------------------------------------------
+// Migrations from Review plugin 
+//-----------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------
+// Schema from review.prisma model and migration 2024_0821_create_review_table 
+//-----------------------------------------------------------------------------------------------
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  title     String
+  body      String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // Relation
+  trip      Trip     @relation(fields: [tripId], references: [id])
+  tripId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+}
+
+//-----------------------------------------------------------------------------------------------
+// Migrations from Itinenary plugin 
+//-----------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------
+// Schema from itinenary.prisma model and migration 2024_0822_create_itinenary_table 
+//-----------------------------------------------------------------------------------------------
+
+model Itinenary {
+  id        Int      @id @default(autoincrement())
+  name      String
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // Relation
+  trip      Trip     @relation(fields: [tripId], references: [id])
+  tripId    Int
+  place     Place?   @relation(fields: [placeId], references: [id])
+  placeId   Int?
+}
+
+//-----------------------------------------------------------------------------------------------
+// Migrations from Place plugin 
+//-----------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------
+// Schema from place.prisma model and migration 2024_0821_create_place_table 
+//-----------------------------------------------------------------------------------------------
+
+model Place {
+  id           Int           @id @default(autoincrement())
+  name         String
+  description  String
+  coordinates  String
+  order        Int
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  // Relation
+  trip         Trip          @relation(fields: [tripId], references: [id])
+  tripId       Int
+  Itinenary    Itinenary[]
+  TimelineItem TimelineItem?
+}
+
+//-----------------------------------------------------------------------------------------------
+// Migrations from Timeline plugin 
+//-----------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------
+// Schema from timeline.prisma model and migration 2024_0821_create_timeline_table 
+//-----------------------------------------------------------------------------------------------
+
+model Timeline {
+  id           Int            @id @default(autoincrement())
+  title        String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  // Relation
+  trip         Trip           @relation(fields: [tripId], references: [id])
+  tripId       Int            @unique
+  TimelineItem TimelineItem[]
+}
+
+//-----------------------------------------------------------------------------------------------
+// Schema from timelineItem.prisma model and migration 2024_0821_create_timelineItem_table 
+//-----------------------------------------------------------------------------------------------
+
+model TimelineItem {
+  id         Int       @id @default(autoincrement())
+  dateFrom   DateTime?
+  dateTo     DateTime?
+  order      Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  // Relation
+  timeline   Timeline  @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+  timelineId Int
+  place      Place?    @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  placeId    Int?      @unique
+}

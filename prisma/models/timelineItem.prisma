@@ -1,0 +1,13 @@
+model TimelineItem {
+    id        Int      @id @default(autoincrement())
+    dateFrom DateTime?
+    dateTo   DateTime?
+    order   Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    // Relation
+    timeline  Timeline @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+    timelineId Int
+    place    Place?    @relation(fields: [placeId], references: [id], onDelete: SetNull)
+    placeId  Int?      @unique
+}

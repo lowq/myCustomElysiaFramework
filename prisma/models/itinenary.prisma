@@ -1,0 +1,12 @@
+model Itinenary {
+    id        Int      @id @default(autoincrement())
+    name      String
+    text String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    // Relation
+    trip      Trip     @relation(fields: [tripId], references: [id])
+    tripId    Int
+    place    Place?    @relation(fields: [placeId], references: [id])
+    placeId  Int?
+}

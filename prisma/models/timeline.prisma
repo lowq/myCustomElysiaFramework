@@ -1,0 +1,9 @@
+model Timeline {
+    id        Int      @id @default(autoincrement())
+    title     String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    // Relation
+    trip      Trip     @relation(fields: [tripId], references: [id])
+    tripId    Int      @unique
+}

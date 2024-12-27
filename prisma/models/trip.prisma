@@ -1,0 +1,52 @@
+model Trip {
+    id        Int      @id @default(autoincrement())
+    name      String
+    description String
+    startDate DateTime
+    endDate   DateTime?
+    type      TripType
+    public    Boolean  @default(false)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    // Relation
+    users     UsersTrips[]
+    creator   User     @relation("TripCreator", fields: [creatorId], references: [id])
+    creatorId Int
+}
+
+model UsersTrips {
+    id        Int      @id @default(autoincrement())
+    accepted  Boolean  @default(false)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    permission TripPermission
+    // Relation
+    user      User     @relation(fields: [userId], references: [id])
+    userId    Int
+    trip      Trip     @relation(fields: [tripId], references: [id])
+    tripId    Int
+}
+
+enum TripPermission {
+    EDITOR
+    VIEWER
+}
+
+enum TripType {
+    ADVENTURE        // For activities like hiking climbing and exploring wilderness areas
+    ROAD_TRIP        // Focused on driving from place to place with multiple destinations
+    BEACH_VACATION   // Relaxing by the sea with water sports and resorts
+    CULTURAL         // Exploring historical sites museums and local culture
+    BUSINESS         // Work-related activities like meetings and conferences
+    FAMILY           // Family-friendly activities and destinations
+    SOLO             // Independent travel for self-discovery or relaxation
+    GROUP            // Traveling with friends or an organized group
+    ROMANTIC         // Romantic getaways for couples
+    ECO_TOURISM      // Nature conservation and environmentally friendly activities
+    CITY_BREAK       // Short trips to cities for sightseeing dining and shopping
+    CRUISE           // Traveling by sea with stops at different ports
+    BACKPACKING      // Low-cost flexible travel for adventurous or young travelers
+    LUXURY           // High-end travel with luxury accommodations and experiences
+    FESTIVAL_EVENT   // Traveling to attend festivals concerts or special events
+    WELLNESS_RETREAT  // Focused on relaxation meditation and self-care
+}
