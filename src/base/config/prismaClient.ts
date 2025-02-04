@@ -1,4 +1,4 @@
-import { PrismaClient } from "../../../prisma/client";
+import { PrismaClient } from "@prisma/client";
 import Events from "../Events";
 
 const prismaClient = new PrismaClient().$extends({
@@ -13,6 +13,6 @@ const prismaClient = new PrismaClient().$extends({
       return result;
     },
   },
-});
+});;
 
 export default prismaClient;

@@ -34,17 +34,6 @@ export default async () => {
     },
   ]);
 
-  const pluginParentName = await inquirer.prompt([
-    {
-      type: "input",
-      name: "name",
-      message: "Name for plugin parent folder?",
-    },
-  ]);
-
-  if (/^[A-Z]/.test(pluginParentName.name)) {
-    const pluginParentFolderName = pluginParentName.name.toLowerCase();
-
     const pluginsFolderPath = path.join(
       findRootFolderPath(__dirname),
       "src",
@@ -57,8 +46,7 @@ export default async () => {
     const pluginParentFolderPath = path.join(
       findRootFolderPath(__dirname),
       "src",
-      "plugins",
-      pluginParentFolderName
+      "plugins"
     );
 
     if (!fs.existsSync(pluginParentFolderPath)) {
@@ -75,38 +63,35 @@ export default async () => {
 
     if (/^[A-Z]/.test(pluginName.name)) {
       if (answer.type === "Plugin") {
-        await plugin(pluginParentName.name, pluginName.name);
+        await plugin(pluginName.name);
       }
       if (answer.type === "Controller") {
-        await controller(pluginParentName.name, pluginName.name);
+        await controller(pluginName.name);
       }
       if (answer.type === "Service") {
-        await service(pluginParentName.name, pluginName.name);
+        await service( pluginName.name);
       }
       if (answer.type === "Middleware") {
-        await middleware(pluginParentName.name, pluginName.name);
+        await middleware( pluginName.name);
       }
       if (answer.type === "Util") {
-        await util(pluginParentName.name, pluginName.name);
+        await util( pluginName.name);
       }
       if (answer.type === "Migration") {
-        await migration(pluginParentName.name, pluginName.name);
+        await migration(pluginName.name);
       }
       if (answer.type === "Error") {
-        await error(pluginParentName.name, pluginName.name);
+        await error( pluginName.name);
       }
       if (answer.type === "Command") {
-        await command(pluginParentName.name, pluginName.name);
+        await command(pluginName.name);
       }
       if (answer.type === "Validation") {
-        await validation(pluginParentName.name, pluginName.name);
+        await validation( pluginName.name);
       }
     } else {
       ui.updateBottomBar("Plugin name should start with capital letter");
     }
-  } else {
-    ui.updateBottomBar("Plugin parent name should start with capital letter");
-  }
 
   process.exit(0);
 };

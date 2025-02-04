@@ -4,9 +4,8 @@ import path from "path";
 import { findRootFolderPath } from "../util/findRootFolderPath";
 const ui = new inquirer.ui.BottomBar();
 
-export default async (pluginParentName: string, pluginName: string) => {
+export default async (pluginName: string) => {
   const pluginFolderName = pluginName.toLowerCase();
-  const pluginParentFolderName = pluginParentName.toLowerCase();
 
   const pluginsFolderPath = path.join(
     findRootFolderPath(__dirname),
@@ -21,7 +20,6 @@ export default async (pluginParentName: string, pluginName: string) => {
     findRootFolderPath(__dirname),
     "src",
     "plugins",
-    pluginParentFolderName,
     pluginFolderName
   );
 

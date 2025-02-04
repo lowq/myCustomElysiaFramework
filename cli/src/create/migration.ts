@@ -5,15 +5,13 @@ import { findRootFolderPath } from "../util/findRootFolderPath";
 import moment from "moment";
 const ui = new inquirer.ui.BottomBar();
 
-export default async (pluginParentName: string, pluginName: string) => {
+export default async (pluginName: string) => {
   const pluginFolderName = pluginName.toLowerCase();
-  const pluginParentFolderName = pluginParentName.toLowerCase();
 
   const pluginFolderPath = path.join(
     findRootFolderPath(__dirname),
     "src",
     "plugins",
-    pluginParentFolderName,
     pluginFolderName
   );
   if (fs.existsSync(pluginFolderPath)) {

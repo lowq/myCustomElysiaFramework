@@ -25,7 +25,6 @@ interface WApiResourceParams {
   errors?: any[] | null;
   auth?: any[] | null;
   additional?: any[];
-  duration?: number | null;
 }
 
 export class WApiResource {
@@ -39,7 +38,6 @@ export class WApiResource {
   public meta: any[] | null = null;
   public auth: any[] | null = null;
   public additional: any[] = [];
-  public duration: number | null = null;
 
   constructor(params: WApiResourceParams) {
     this.type = params.type;
@@ -50,7 +48,6 @@ export class WApiResource {
     this.meta = params.meta ?? null;
     this.auth = params.auth ?? null;
     this.additional = params.additional ?? [];
-    this.duration = params.duration ?? null;
   }
 
   public additionalData(data: any[]): WApiResource {
@@ -95,8 +92,7 @@ export class WApiResource {
     errors: any[] | any | null = null,
     data: any = null,
     auth: any[] | null = null,
-    additional: any[] = [],
-    duration: number | null = null
+    additional: any[] = []
   ): WApiResource {
     return new WApiResource({
       type: ResponseTypeEnum.ERROR,
@@ -106,7 +102,6 @@ export class WApiResource {
       data,
       auth,
       additional,
-      duration,
     });
   }
 
@@ -132,8 +127,7 @@ export class WApiResource {
     errors: any[] | null,
     data: any = null,
     auth: any[] | null,
-    additional: any[] = [],
-    duration: number | null = null
+    additional: any[] = []
   ): WApiResource {
     return new WApiResource({
       type: ResponseTypeEnum.WARNING,
@@ -143,7 +137,6 @@ export class WApiResource {
       data,
       auth,
       additional,
-      duration,
     });
   }
 
@@ -169,8 +162,7 @@ export class WApiResource {
     data: any = null,
     meta: any = null,
     auth: any[] | null = null,
-    additional: any[] = [],
-    duration: number | null = null
+    additional: any[] = []
   ): WApiResource {
     return new WApiResource({
       type: ResponseTypeEnum.SUCCESS,
@@ -180,7 +172,6 @@ export class WApiResource {
       data,
       auth,
       additional,
-      duration,
     });
   }
 
@@ -203,8 +194,7 @@ export class WApiResource {
     message: string | null = null,
     data: any = null,
     auth: any[] | null = null,
-    additional: any[] = [],
-    duration: number | null = null
+    additional: any[] = []
   ): WApiResource {
     return new WApiResource({
       type: ResponseTypeEnum.INFO,
@@ -213,7 +203,6 @@ export class WApiResource {
       data,
       auth,
       additional,
-      duration,
     });
   }
 
@@ -231,7 +220,6 @@ export class WApiResource {
       meta: this.meta,
       auth: this.auth,
       additional: this.additional,
-      duration: this.duration,
     };
 
     // Remove null properties and empty arrays from the response

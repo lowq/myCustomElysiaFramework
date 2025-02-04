@@ -12,18 +12,22 @@ export default class PluginBase {
   /**
    * Creates an instance of PluginBase.
    */
-  constructor() {}
+  constructor() {
+  }
 
   /**
    * Initializes the plugin.
    * @param {Elysia} app - The Elysia app instance.
    */
-  async init() {
-    console.log(`Initializing ${this.constructor.name}`);
+  async init(app?: Elysia) {
     this.boot();
     Events.fire(`${this.constructor.name.toLowerCase()}.onBoot`);
     this.register();
     Events.fire(`${this.constructor.name.toLowerCase()}.onRegister`);
+    if (app) {
+      await this.initRoutes(app);
+      this.errorHandling(app);
+    }
     this.initConfigs();
     this.initCommands();
     this.initMigrations();
@@ -33,14 +37,11 @@ export default class PluginBase {
     Events.fire(`${this.constructor.name.toLowerCase()}.onRun`);
   }
 
-  async migrate() {
-    this.initMigrations();
-  }
-
   /**
    * Boot the plugin.
    */
-  boot() {}
+  boot() {
+  }
 
   /**
    * Registers the plugin.
@@ -52,9 +53,7 @@ export default class PluginBase {
    */
   async initRoutes(app: Elysia) {
     const routesPath = path.join(
-      `${path.dirname(
-        __dirname
-      )}/plugins/${this.constructor.name.toLowerCase()}`,
+      `${path.dirname(__dirname)}/plugins/${this.constructor.name.toLowerCase()}`,
       "routes.ts"
     );
     if (fs.existsSync(routesPath)) {
@@ -72,9 +71,7 @@ export default class PluginBase {
    */
   private initCommands() {
     const commandsPath = path.join(
-      `${path.dirname(
-        __dirname
-      )}/plugins/${this.constructor.name.toLowerCase()}`,
+      `${path.dirname(__dirname)}/plugins/${this.constructor.name.toLowerCase()}`,
       "commands"
     );
     if (fs.existsSync(commandsPath)) {
@@ -82,9 +79,7 @@ export default class PluginBase {
 
       files.forEach((file) => {
         const commandPath = path.join(
-          `${path.dirname(
-            __dirname
-          )}/plugins/${this.constructor.name.toLowerCase()}/commands`,
+          `${path.dirname(__dirname)}/plugins/${this.constructor.name.toLowerCase()}/commands`,
           file
         );
 
@@ -99,9 +94,7 @@ export default class PluginBase {
    */
   private initMigrations() {
     const migrationsPath = path.join(
-      `${path.dirname(
-        __dirname
-      )}/plugins/${this.constructor.name.toLowerCase()}`,
+      `${path.dirname(__dirname)}/plugins/${this.constructor.name.toLowerCase()}`,
       "migrations"
     );
     if (fs.existsSync(migrationsPath)) {
@@ -109,18 +102,12 @@ export default class PluginBase {
 
       files.forEach((file) => {
         const migrationPath = path.join(
-          `${path.dirname(
-            __dirname
-          )}/plugins/${this.constructor.name.toLowerCase()}/migrations`,
+          `${path.dirname(__dirname)}/plugins/${this.constructor.name.toLowerCase()}/migrations`,
           file
         );
         const fileName = file.split(".")[0];
 
-        const pluginFolderPath = path.join(
-          `${path.dirname(
-            __dirname
-          )}/plugins/${this.constructor.name.toLowerCase()}`
-        );
+        const pluginFolderPath = path.join(`${path.dirname(__dirname)}/plugins/${this.constructor.name.toLowerCase()}`)
 
         const migration = require(migrationPath).default;
         this.migrations.push(new migration(fileName, pluginFolderPath));
@@ -133,9 +120,7 @@ export default class PluginBase {
    */
   private initConfigs() {
     const configPath = path.join(
-      `${path.dirname(
-        __dirname
-      )}/plugins/${this.constructor.name.toLowerCase()}`,
+      `${path.dirname(__dirname)}/plugins/${this.constructor.name.toLowerCase()}`,
       "configs"
     );
     if (fs.existsSync(configPath)) {
@@ -143,9 +128,7 @@ export default class PluginBase {
 
       files.forEach((file) => {
         const configPath = path.join(
-          `${path.dirname(
-            __dirname
-          )}/plugins/${this.constructor.name.toLowerCase()}/configs`,
+          `${path.dirname(__dirname)}/plugins/${this.constructor.name.toLowerCase()}/configs`,
           file
         );
         const fileName = file.split(".")[0];
@@ -163,18 +146,7 @@ export default class PluginBase {
   /**
    * Handles errors in the plugin.
    */
-  errorHandling(): {
-    errors: ErrorConstructor[];
-    errorFunction: (
-      code: string,
-      error: Error
-    ) => { status: number; response: unknown } | void;
-  } {
-    return {
-      errors: [],
-      errorFunction: (code: string, error: Error) => {},
-    };
-  }
+  errorHandling(app: Elysia) {}
 
   start() {}
   run() {}

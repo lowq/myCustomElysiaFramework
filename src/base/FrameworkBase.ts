@@ -3,10 +3,11 @@ import * as path from "path";
 import Elysia from "elysia";
 import PluginBase from "./PluginBase";
 import { ERROR } from "./errors/ERROR";
+import moment from "moment";
 import Logger, { LogType } from "./Logger";
 import { RedirectResponse, WApiResource } from "./Response";
-import { AUTHENTICATE_ERROR } from "../plugins/user/errors/AUTHENTICATE_ERROR";
-import { getLastCachedError } from "./errors/lastCachedError";
+import Stream from "@elysiajs/stream";
+import { findRootFolderPath } from "./util/findRootFolderPath";
 
 class Framework {
   protected app?: Elysia;
@@ -15,21 +16,6 @@ class Framework {
   constructor() {}
 
   frameworkStart = async (app: Elysia) => {
-    await this.loadPlugins();
-    await this.baseErrorHandling(app);
-    const version = require("../../package.json").version;
-    app.get(
-      "/api/version",
-      () => {
-        return version;
-      },
-      {
-        detail: {
-          tags: ["Base"],
-          summary: "Get version",
-        },
-      }
-    );
     app.mapResponse(({ response, path, redirect }): any => {
       if (response instanceof RedirectResponse) {
         return redirect(response.url);
@@ -52,100 +38,103 @@ class Framework {
         return localResponse;
       }
       if (response instanceof WApiResource) {
-        return response;
+        localResponse = response.toResponse();
       } else {
         const responseNew = WApiResource.success("", response);
-        return responseNew;
+        localResponse = responseNew.toResponse();
       }
+
+      return localResponse;
     });
-    for (const plugin of this.plugins) {
-      await plugin.initRoutes(app);
-    }
+    await this.baseErrorHandling(app);
     this.app = app;
+    /*  app.get(
+      "/test",
+      () =>
+        new Stream(async (stream) => {
+          const pathFF = path.join(
+            findRootFolderPath(__dirname),
+            "storage",
+            "test.webp"
+          );
+          const file = fs.readFileSync(pathFF);
+          stream.send(file);
+        })
+    ); */
+
+    await this.loadPlugins(app);
     return app;
   };
 
-  loadAllPlugins = async () => {
+  onlyBootPlugins = async () => {
     const pluginsDir = path.join(__dirname, "../plugins");
     const pluginFolders = fs.readdirSync(pluginsDir);
 
     for (const folder of pluginFolders) {
-      const pluginPath = path.join(pluginsDir, folder, "Plugin.ts");
+        const pluginPath = path.join(
+          pluginsDir,
+          folder,
+          "Plugin.ts"
+        );
 
-      const module = await import(pluginPath);
-      const firstProperty = Object.keys(module)[0];
-      const plugin = new module[firstProperty]();
-      this.plugins.push(plugin);
-    }
+        const module = await import(pluginPath);
+        const firstProperty = Object.keys(module)[0];
+        const plugin = new module[firstProperty]();
+        await plugin.init();
+        this.plugins.push(plugin);
+      }
   };
 
-  migration = async () => {
-    await this.loadAllPlugins();
-    for (const plugin of this.plugins) {
-      await plugin.migrate();
-    }
-  };
+  protected loadPlugins = async (app: Elysia) => {
+    const pluginsDir = path.join(__dirname, "../plugins");
+    const pluginFolders = fs.readdirSync(pluginsDir);
 
-  loadPlugins = async () => {
-    await this.loadAllPlugins();
-    for (const plugin of this.plugins) {
-      await plugin.init();
+    for (const folder of pluginFolders) {
+        const pluginPath = path.join(
+          pluginsDir,
+          folder,
+          "Plugin.ts"
+        );
+
+        const module = await import(pluginPath);
+        const firstProperty = Object.keys(module)[0];
+        const plugin = new module[firstProperty]();
+        await plugin.init(app);
     }
   };
 
   baseErrorHandling = async (app: Elysia) => {
-    const customErrorFunctions: ((
-      code: string,
-      error: Error
-    ) => { status: number; response: any } | void)[] = [];
-
-    const errors: ErrorConstructor[] = [ERROR as unknown as ErrorConstructor];
-
-    for (const plugin of this.plugins) {
-      customErrorFunctions.push(plugin.errorHandling().errorFunction);
-      errors.push(...plugin.errorHandling().errors);
-    }
-
-    const errorMap: Record<string, { prototype: Error }> = {};
-    for (const error of errors) {
-      errorMap[error.name] = { prototype: error.prototype };
-    }
-
     app
       .error({
-        ...errorMap,
+        ERROR,
       })
       .onError(({ code, set, error, request }) => {
         console.log("error", error);
-        const lastError = getLastCachedError(error);
-        console.log("lastError", lastError);
-
         if (error instanceof ERROR) {
           Logger.error(
-            `Error: ${error.message} || Last cached error:  ${lastError} || ${error.cachedError} || ${error.stack}`
+            `Error: ${error.message} || ${error.cachedError} || ${error.stack}`
           );
         } else {
-          Logger.error(
-            `Error: ${error} || Last cached error: ${lastError}  || ${error.stack} `
-          );
+          Logger.error(`Error: ${error}  || ${error.stack}`);
         }
 
+        let response;
         if (code === "NOT_FOUND") {
           set.status = 404;
           Logger.error(`Not Found 404 ${request.url}`);
-          return WApiResource.error("Not Found");
+          response = WApiResource.error("Not Found", [error]);
         } else if (code === "INTERNAL_SERVER_ERROR") {
           set.status = 500;
-          return WApiResource.errorToast("Internal Server Error");
+          response = WApiResource.errorToast("Internal Server Error", [error]);
         } else if (code === "UNKNOWN") {
           set.status = 400;
-          return WApiResource.error("Unknown Error");
+          response = WApiResource.error("Unknown Error", [error]);
         } else if (code === "INVALID_COOKIE_SIGNATURE") {
           set.status = 401;
-          return WApiResource.error("Invalid Cookie Signature");
+          response = WApiResource.error("Invalid Cookie Signature", [error]);
         } else if (code === "VALIDATION") {
           set.status = 400;
-          return WApiResource.errorToast(
+          response = WApiResource.errorToast(
             "Validation Error",
             JSON.parse(error.message).errors.map(
               (e: any) =>
@@ -154,29 +143,15 @@ class Framework {
           );
         } else if (code === "PARSE") {
           set.status = 400;
-          return WApiResource.error("Parse Error");
+          response = WApiResource.error("Parse Error", [error]);
         } else if (code === "ERROR") {
           set.status = 400;
-          return WApiResource.errorToast(
-            lastError.message ?? lastError,
-            lastError
-          );
+          response = WApiResource.errorToast(error.message, [
+            error.cachedError,
+          ]);
         }
-
-        let pluginResponse;
-
-        // Check if there's a custom error function for the plugin
-        for (const pluginName in customErrorFunctions) {
-          const errorFunction = customErrorFunctions[pluginName];
-          pluginResponse = errorFunction(code, lastError);
-          if (pluginResponse) break;
-        }
-
-        // If custom error handling exists, use it
-        if (pluginResponse) {
-          set.status = pluginResponse.status;
-          return pluginResponse.response;
-        }
+        //console.log("response", response);
+        if (response instanceof WApiResource) return response.toResponse();
       });
     app.get(
       "/errors",

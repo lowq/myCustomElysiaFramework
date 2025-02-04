@@ -1,4 +1,4 @@
-import Command from "../../../../base/Command";
+import Command from "../../../base/Command";
 
 export default (class __CLASS_NAME__ extends Command {
   commandName: string = "__COMMAND_NAME__";
